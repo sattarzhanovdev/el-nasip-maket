@@ -3,513 +3,469 @@
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
+
 const char* ssid = "WiFi name";
 const char* password = "WiFi password";
 
-long demoAmount;
-
 Adafruit_NeoPixel a_block = Adafruit_NeoPixel(104, 12, NEO_RGB + NEO_KHZ800);
+Adafruit_NeoPixel pod = Adafruit_NeoPixel(50, 14, NEO_RGB + NEO_KHZ800);
 int bright = 255;
 int r = 255;
 int g = 157;
 int b = 15;
+int lastRandomPixels[3] = {-1, -1, -1};
+
+// Диапазоны светодиодов для каждой стороны
+int side1Start = 0;
+int side1End = 51;
+int side2Start = 52;
+int side2End = 103;
 
 long lastFloor;
+unsigned long lastRandomTime = 0;
+unsigned long randomInterval = 1000; // Интервал случайного выключения в миллисекундах
+
+
+void turnOnAllLeds() {
+  a_block.clear();
+  for (int i = 0; i < 104; i++) {
+    a_block.setBrightness(bright);
+    a_block.setPixelColor(i, a_block.Color(g, r, b));
+  }
+  a_block.show();
+}
+
+void turnOffAllLeds() {
+  a_block.clear();
+  pod.clear();
+  for (int i = 0; i < 104; i++) {
+    a_block.setBrightness(bright);
+    a_block.setPixelColor(i, a_block.Color(0, 0, 0));
+  }
+  for(int i = 0; i < 50; i++){
+    pod.setBrightness(bright);
+    pod.setPixelColor(i, pod.Color(0, 0, 0));
+    pod.show();
+  }
+  a_block.show();
+}
+
+int getRandomPixel(int start, int end, int lastRandomPixel) {
+  int randomPixel;
+  do {
+    randomPixel = random(start, end + 1);
+  } while (randomPixel == lastRandomPixel);
+  return randomPixel;
+}
+
+
+
+void turnOnFloor(char floorLetter) {
+  int floor = floorLetter - 'a' + 1;
+  int startPixel = (floor - 1) * 8;
+  Serial.println("s" + String(startPixel));
+
+  a_block.clear();
+
+  if(floorLetter == 'k'){
+    for (int i = 80; i < 88 + 8; i++) {
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(i, a_block.Color(g, r, b));
+    }
+  }else{
+    for (int i = startPixel; i < startPixel + 8; i++) {
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(i, a_block.Color(g, r, b));
+    }
+  }
+  a_block.show();
+}
+
+void turnOnSubpattern(int subpattern) {
+  int startPixel = (subpattern - 1) * 2;
+  a_block.clear();
+  
+  if(lastFloor == 1){
+    if(subpattern == 3){
+      for (int i = startPixel; i < startPixel + 3; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel; i < startPixel + 2; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+  
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 2){
+    if(subpattern == 3){
+      for (int i = startPixel + 8; i < startPixel + 3 + 8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel +8; i < startPixel + 2 +8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 3){
+    if(subpattern == 3){
+      for (int i = startPixel + 8 + 8; i < startPixel + 3 + 8 + 8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel + 8 + 8; i < startPixel + 2 + 8 + 8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 4){
+    if(subpattern == 3){
+      for (int i = startPixel + 8 + 8 + 8; i < startPixel + 3 + 8 + 8 + 8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel + 8 + 8 + 8; i < startPixel + 2 + 8 + 8 + 8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 5){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8; i < startPixel+3+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8; i < startPixel+2+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+  
+  if(lastFloor == 6){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8+8; i < startPixel+3+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8+8; i < startPixel+2+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 7){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8+8+8; i < startPixel+2+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 8){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8+8+8+8; i < startPixel+2+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 9){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8+8+8+8+8; i < startPixel+2+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 10){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8; i < startPixel+2+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 11){
+    if(subpattern == 3){
+      a_block.clear();
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
+    }else if(subpattern == 2){
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8+8; i < startPixel+8+8+8+8+8+8+8+8+8+8+8+2; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8; i < startPixel+8+8+8+8+8+8+8+8+8+8+2; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 1){
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8+8; i < startPixel+8+8+8+8+8+8+8+8+8+8+8+2; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8; i < startPixel+8+8+8+8+8+8+8+8+8+8+2; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 12){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8+8; i < startPixel+2+8+8+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+
+  if(lastFloor == 13){
+    if(subpattern == 3){
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8+8+8; i < startPixel+3+8+8+8+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }else if(subpattern == 4){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(7+8+8+8+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
+    }else{
+      for (int i = startPixel+8+8+8+8+8+8+8+8+8+8+8+8; i < startPixel+2+8+8+8+8+8+8+8+8+8+8+8+8; i++) {
+        a_block.setBrightness(bright);
+        a_block.setPixelColor(i, a_block.Color(g, r, b));
+      }
+    }
+    a_block.show();
+  }
+}
+
+void turnOffRandomLed() {
+  int randomPixel = getRandomPixel(0, 103, -1);
+  a_block.setBrightness(bright);
+  a_block.setPixelColor(randomPixel, a_block.Color(0, 0, 0));
+  a_block.show();
+}
+
+void randomPattern() {
+  for(int i = 0; i < 104; i++){
+    if(i % 3 == 0){
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(i, a_block.Color(g, r, b));
+      a_block.show();
+    }else{
+      a_block.setBrightness(bright);
+      a_block.setPixelColor(i, a_block.Color(0, 0, 0));
+      a_block.show();
+    }
+  }
+
+  for (int i = 0; i < 3; i++) {
+    int randomPixel = getRandomPixel((i == 0) ? side1Start : side2Start, (i == 0) ? side1End : side2End, lastRandomPixels[i]);
+    
+    a_block.setBrightness(bright);
+    a_block.setPixelColor(randomPixel, a_block.Color(g, r, b));
+    a_block.show();
+
+    lastRandomPixels[i] = randomPixel; // Сохраняем значение последнего включенного светодиода
+    turnOffRandomLed();
+  }
+
+}
 
 void setup() {
   Serial.begin(115200);
   a_block.begin();
+  a_block.clear();
+  pod.begin();
 
-  // Подключение к Wi-Fi
+  // Connect to Wi-Fi
   WiFi.begin(ssid, password);
   while (WiFi.status() != WL_CONNECTED) {
     delay(1000);
     Serial.println("Connecting to WiFi...");
   }
   Serial.println("Connected to WiFi");
-  pinMode(12, OUTPUT);
 }
 
 void loop() {
-  // Создание объекта HTTPClient
   HTTPClient http;
 
-  // Формирование URL-адреса с параметрами
+  // Form the URL with parameters
   String url = "https://el-nasip-default-rtdb.asia-southeast1.firebasedatabase.app/value.json";
 
-  // Установка URL-адреса для запроса
+  // Set the URL for the request
   http.begin(url);
 
-  // Отправка GET-запроса
+  // Send a GET request
   int httpCode = http.GET();
   if (httpCode > 0) {
-    // Получение ответа в виде JSON
-    DynamicJsonDocument doc(1024); // Размер документа может быть изменен в зависимости от ваших потребностей
+    DynamicJsonDocument doc(1024);
     DeserializationError error = deserializeJson(doc, http.getString());
 
     if (error) {
       Serial.print("deserializeJson() failed: ");
-      Serial.println(error.c_str());
     } else {
       String value = doc["value"].as<String>();
-      Serial.println(value);
 
-      switch (value) {
-        case 'v':
-          a_block.clear();
-          for (int i = 0; i < 104; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-        
-        case '_':
-          a_block.clear();
-          for (int i = 0; i < 104; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(0, 0, 0));
-            a_block.show();
-          }
-          break;
-
-        case 'D':
-          a_block.clear();
-          for (int i = 0; i < 104; i++) {
-            if (i % 2 == 0) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }
-          break;
-
-        case '1' :
+      if (value == "v") {
+        turnOnAllLeds();
+      } else if (value == "_") {
+        turnOffAllLeds();
+      } else if (value == "D") {
+        randomPattern();
+      } else if (value >= "a" && value <= "m") {
+        turnOnFloor(value[0]);
+        if(value == "a"){
           lastFloor = 1;
-          for (int i = 0; i < 8; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-        
-        case '2' :
+        }else if(value == "b"){
           lastFloor = 2;
-          for (int i = 8; i < 16; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '3' :
+        }else if(value == "c"){
           lastFloor = 3;
-          for (int i = 16; i < 24; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '4' :
+        }else if(value == "d"){
           lastFloor = 4;
-          for (int i = 24; i < 32; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '5' :
+        }else if(value == "e"){
           lastFloor = 5;
-          for (int i = 32; i < 40; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-        
-        case '6' :
+        }else if(value == "f"){
           lastFloor = 6;
-          for (int i = 40; i < 48; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '7' :
+        }else if(value == "g"){
           lastFloor = 7;
-          for (int i = 48; i < 56; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '8' :
+        }else if(value == "h"){
           lastFloor = 8;
-          for (int i = 56; i < 64; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '9' :
+        }else if(value == "i"){
           lastFloor = 9;
-          for (int i = 64; i < 72; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '10' :
+        }else if(value == "g"){
           lastFloor = 10;
-          for (int i = 72; i < 80; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '11' :
+        }else if(value == "k"){
           lastFloor = 11;
-          for (int i = 80; i < 88; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '12' :
+        }else if(value == "l"){
           lastFloor = 12;
-          for (int i = 88; i < 96; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case '13' :
+        }else if(value == "m"){
           lastFloor = 13;
-          for (int i = 96; i < 104; i++) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(i, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-
-        case 'a' :
-          if(lastFloor == 1) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 2) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 3) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 4) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 5) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 6) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 7) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 8) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 9) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 10) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 11) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 12) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }else if(lastFloor == 13) {
-            a_block.setBrightness(bright);
-            a_block.setPixelColor(1-1+8+8+8+8+8+8+8+8+8+8+8+8, a_block.Color(g, r, b));
-            a_block.show();
-          }
-          break;
-        
-        case 'b' :
-          if(lastFloor == 1) {
-            for(int i = 4; i < 6; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 2) {
-            for(int i = 4+8; i < 6+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 3) {
-            for(int i = 4+8+8; i < 6+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 4) {
-            for(int i = 4+8+8+8; i < 6+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 5) {
-            for(int i = 4+8+8+8+8; i < 6+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 6) {
-            for(int i = 4+8+8+8+8+8; i < 6+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 7) {
-            for(int i = 4+8+8+8+8+8+8; i < 6+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 8) {
-            for(int i = 4+8+8+8+8+8+8+8; i < 6+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 9) {
-            for(int i = 4+8+8+8+8+8+8+8+8; i < 6+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 10) {
-            for(int i = 4+8+8+8+8+8+8+8+8+8; i < 6+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 11) {
-            for(int i = 4+8+8+8+8+8+8+8+8+8+8; i < 6+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 12) {
-            for(int i = 4+8+8+8+8+8+8+8+8+8+8+8; i < 6+8+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 13) {
-            for(int i = 4+8+8+8+8+8+8+8+8+8+8+8+8; i < 6+8+8+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }
-          break;
-
-        case 'c' :
-          if(lastFloor == 1) {
-            for(int i = 6; i < 8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 2) {
-            for(int i = 6+8; i < 8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 3) {
-            for(int i = 6+8+8; i < 8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 4) {
-            for(int i = 6+8+8+8; i < 8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 5) {
-            for(int i = 6+8+8+8+8; i < 8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 6) {
-            for(int i = 6+8+8+8+8+8; i < 8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 7) {
-            for(int i = 6+8+8+8+8+8+8; i < 8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 8) {
-            for(int i = 6+8+8+8+8+8+8+8; i < 8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 9) {
-            for(int i = 6+8+8+8+8+8+8+8+8; i < 8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 10) {
-            for(int i = 6+8+8+8+8+8+8+8+8+8; i < 8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 11) {
-            for(int i = 6+8+8+8+8+8+8+8+8+8+8; i < 8+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 12) {
-            for(int i = 6+8+8+8+8+8+8+8+8+8+8+8; i < 8+8+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 13) {
-            for(int i = 6+8+8+8+8+8+8+8+8+8+8+8+8; i < 8+8+8+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }
-          break;
-
-        case 'd' :
-          if(lastFloor == 1) {
-            for(int i = 1; i < 4; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 2) {
-            for(int i = 1+8; i < 4+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 3) {
-            for(int i = 1+8+8; i < 4+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 4) {
-            for(int i = 1+8+8+8; i < 4+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 5) {
-            for(int i = 1+8+8+8+8; i < 4+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 6) {
-            for(int i = 1+8+8+8+8+8; i < 4+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 7) {
-            for(int i = 1+8+8+8+8+8+8; i < 4+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 8) {
-            for(int i = 1+8+8+8+8+8+8+8; i < 4+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 9) {
-            for(int i = 1+8+8+8+8+8+8+8+8; i < 4+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 10) {
-            for(int i = 1+8+8+8+8+8+8+8+8+8; i < 4+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 11) {
-            for(int i = 1+8+8+8+8+8+8+8+8+8+8; i < 4+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 12) {
-            for(int i = 1+8+8+8+8+8+8+8+8+8+8+8; i < 4+8+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }else if(lastFloor == 13) {
-            for(int i = 1+8+8+8+8+8+8+8+8+8+8+8+8; i < 4+8+8+8+8+8+8+8+8+8+8+8+8; i++) {
-              a_block.setBrightness(bright);
-              a_block.setPixelColor(i, a_block.Color(g, r, b));
-              a_block.show();
-            }
-          }
-          break;
+        }
+      }else if(value >= "1" && value <= "4"){
+        turnOnSubpattern(value.toInt());
+      } else if(value == "P"){
+        for(int i = 0; i < 50; i++){
+          pod.setBrightness(bright);
+          pod.setPixelColor(i, pod.Color(255, 255, 255));
+          pod.show();
+        }
+      }else if(value == "p"){
+        for(int i = 0; i < 50; i++){
+          pod.setBrightness(bright);
+          pod.setPixelColor(i, pod.Color(0, 0, 0));
+          pod.show();
+        }
       }
+
+    }
   } else {
     Serial.println("HTTP request failed");
   }
 
-  // Освобождение ресурсов
   http.end();
-
-  // Пауза между запросами
-  delay(1);
 }
+
+
