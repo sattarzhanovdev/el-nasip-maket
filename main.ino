@@ -1,11 +1,13 @@
-#include <WiFi.h>
+#include <WiFi.h> 
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
 #include <Adafruit_NeoPixel.h>
 
+const char* ssid = "TP-Link_3A5E";
+const char* password = "90815690";
 
-const char* ssid = "WiFi name";
-const char* password = "WiFi password";
+const char* host = "el-nasi-default-rtdb.asia-southeast1.firebasedatabase.app";
+const int httpsPort = 443; // HTTPS port
 
 Adafruit_NeoPixel a_block = Adafruit_NeoPixel(104, 12, NEO_RGB + NEO_KHZ800);
 Adafruit_NeoPixel pod = Adafruit_NeoPixel(50, 14, NEO_RGB + NEO_KHZ800);
@@ -374,98 +376,103 @@ void randomPattern() {
 
 }
 
+
 void setup() {
   Serial.begin(115200);
-  a_block.begin();
-  a_block.clear();
-  pod.begin();
-
+  
   // Connect to Wi-Fi
   WiFi.begin(ssid, password);
+  Serial.print("Connecting to WiFi");
   while (WiFi.status() != WL_CONNECTED) {
-    delay(1000);
-    Serial.println("Connecting to WiFi...");
+    delay(500);
+    Serial.print(".");
   }
-  Serial.println("Connected to WiFi");
+  Serial.println("WiFi connected");
 }
 
 void loop() {
-  HTTPClient http;
-
-  // Form the URL with parameters
-  String url = "https://el-nasip-default-rtdb.asia-southeast1.firebasedatabase.app/value.json";
-
-  // Set the URL for the request
-  http.begin(url);
-
-  // Send a GET request
-  int httpCode = http.GET();
-  if (httpCode > 0) {
-    DynamicJsonDocument doc(1024);
-    DeserializationError error = deserializeJson(doc, http.getString());
-
-    if (error) {
-      Serial.print("deserializeJson() failed: ");
-    } else {
-      String value = doc["value"].as<String>();
-
-      if (value == "v") {
-        turnOnAllLeds();
-      } else if (value == "_") {
-        turnOffAllLeds();
-      } else if (value == "D") {
-        randomPattern();
-      } else if (value >= "a" && value <= "m") {
-        turnOnFloor(value[0]);
-        if(value == "a"){
-          lastFloor = 1;
-        }else if(value == "b"){
-          lastFloor = 2;
-        }else if(value == "c"){
-          lastFloor = 3;
-        }else if(value == "d"){
-          lastFloor = 4;
-        }else if(value == "e"){
-          lastFloor = 5;
-        }else if(value == "f"){
-          lastFloor = 6;
-        }else if(value == "g"){
-          lastFloor = 7;
-        }else if(value == "h"){
-          lastFloor = 8;
-        }else if(value == "i"){
-          lastFloor = 9;
-        }else if(value == "g"){
-          lastFloor = 10;
-        }else if(value == "k"){
-          lastFloor = 11;
-        }else if(value == "l"){
-          lastFloor = 12;
-        }else if(value == "m"){
-          lastFloor = 13;
+  // Make HTTP GET request to retrieve data
+  HTTPClient https;
+  String url = "https://el-nasi-default-rtdb.asia-southeast1.firebasedatabase.app/value.json";
+  
+  if (https.begin(url)) {  // HTTPS
+    int httpCode = https.GET();
+    if (httpCode > 0) {
+      if (httpCode == HTTP_CODE_OK) {
+        // Parse JSON response
+        DynamicJsonDocument jsonDocument(1024);
+        DeserializationError error = deserializeJson(jsonDocument, https.getString());
+        if (error) {
+          Serial.print("deserializeJson() failed: ");
+          Serial.println(error.c_str());
+        } else {
+          // Access the value data
+          String value = jsonDocument["value"];
+          Serial.print("Value: ");
+          Serial.println(value);
+          if (value == "v") {
+            turnOnAllLeds();
+          } else if (value == "_") {
+            turnOffAllLeds();
+          } else if (value == "D") {
+            randomPattern();
+          } else if (value >= "a" && value <= "m") {
+            turnOnFloor(value[0]);
+            if(value == "a"){
+              lastFloor = 1;
+            }else if(value == "b"){
+              lastFloor = 2;
+            }else if(value == "c"){
+              lastFloor = 3;
+            }else if(value == "d"){
+              lastFloor = 4;
+            }else if(value == "e"){
+              lastFloor = 5;
+            }else if(value == "f"){
+              lastFloor = 6;
+            }else if(value == "g"){
+              lastFloor = 7;
+            }else if(value == "h"){
+              lastFloor = 8;
+            }else if(value == "i"){
+              lastFloor = 9;
+            }else if(value == "g"){
+              lastFloor = 10;
+            }else if(value == "k"){
+              lastFloor = 11;
+            }else if(value == "l"){
+              lastFloor = 12;
+            }else if(value == "m"){
+              lastFloor = 13;
+            }
+          }else if(value >= "1" && value <= "4"){
+            turnOnSubpattern(value.toInt());
+          } else if(value == "P"){
+            for(int i = 0; i < 50; i++){
+              pod.setBrightness(bright);
+              pod.setPixelColor(i, pod.Color(255, 255, 255));
+              pod.show();
+            }
+          }else if(value == "p"){
+            for(int i = 0; i < 50; i++){
+              pod.setBrightness(bright);
+              pod.setPixelColor(i, pod.Color(0, 0, 0));
+              pod.show();
+            }
+          }
         }
-      }else if(value >= "1" && value <= "4"){
-        turnOnSubpattern(value.toInt());
-      } else if(value == "P"){
-        for(int i = 0; i < 50; i++){
-          pod.setBrightness(bright);
-          pod.setPixelColor(i, pod.Color(255, 255, 255));
-          pod.show();
-        }
-      }else if(value == "p"){
-        for(int i = 0; i < 50; i++){
-          pod.setBrightness(bright);
-          pod.setPixelColor(i, pod.Color(0, 0, 0));
-          pod.show();
-        }
+      } else {
+        Serial.print("HTTP request failed with error code: ");
+        Serial.println(httpCode);
       }
-
+    } else {
+      Serial.println("HTTP request failed");
     }
+    
+    https.end(); // Close connection
   } else {
-    Serial.println("HTTP request failed");
+    Serial.println("Unable to connect");
   }
 
-  http.end();
+  // Wait before making the next request
 }
-
-
